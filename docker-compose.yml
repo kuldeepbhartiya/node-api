@@ -1,0 +1,31 @@
+
+services:
+  api:
+    container_name: node-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: base     # Production build stage
+    ports:
+      - "4000:4000"
+    env_file:
+      - .env
+    restart: unless-stopped
+    profiles: ["prod"]
+
+  api-debug:
+    container_name: node-api-debug
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: debug    # Debug build stage
+    ports:
+      - "4001:4000"    # Debug host port
+    env_file:
+      - .env
+    volumes:
+      - ./src:/usr/src/app/src   # Live code editing
+    stdin_open: true
+    tty: true
+    profiles: ["debug"]
+

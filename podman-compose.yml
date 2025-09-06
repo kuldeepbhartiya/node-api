@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  my-node-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: my-node-api:latest   # avoids duplicate images
+    container_name: my-node-api
+    ports:
+      - "4000:4000"
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
