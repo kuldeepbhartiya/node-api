@@ -1,3 +1,4 @@
+version: "3.9"
 
 services:
   api:
@@ -5,11 +6,18 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: base     # Production build stage
+      target: base        # production stage
+    image: node-api:latest
     ports:
       - "4000:4000"
     env_file:
       - .env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
     restart: unless-stopped
     profiles: ["prod"]
 
@@ -18,14 +26,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: debug    # Debug build stage
+      target: debug       # debug stage
+    image: node-api-debug:latest
     ports:
-      - "4001:4000"    # Debug host port
+      - "4001:4000"
     env_file:
       - .env
     volumes:
-      - ./src:/usr/src/app/src   # Live code editing
+      - ./src:/usr/src/app/src   # live code editing
     stdin_open: true
     tty: true
+    restart: unless-stopped
     profiles: ["debug"]
-

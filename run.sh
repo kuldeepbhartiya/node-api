@@ -1,29 +1,43 @@
 #!/usr/bin/env bash
-# run.sh - Build and run Node.js API with Podman + Docker Compose
+# run.sh - Build and run Node.js API with Podman Compose (or podman-compose)
 
 # -------------------------------
 # Configuration
 # -------------------------------
-DOCKER_HOST=${DOCKER_HOST:-"unix:///run/user/$UID/podman/podman.sock"}
 PROFILE=${1:-prod}   # default to 'prod', pass 'debug' as argument
-COMPOSE_FILE="docker-compose.yml"
+COMPOSE_FILE="compose.yml"
 
 # -------------------------------
-# Export Docker host for Podman socket
+# Detect podman-compose command
 # -------------------------------
-export DOCKER_HOST
-echo "Using DOCKER_HOST=$DOCKER_HOST"
+if command -v "podman-compose" &> /dev/null; then
+    COMPOSE_CMD="podman-compose"
+elif podman compose version &> /dev/null; then
+    COMPOSE_CMD="podman compose"
+else
+    echo "Neither 'podman compose' nor 'podman-compose' found. Please install Podman Compose."
+    exit 1
+fi
+
+echo "Using compose command: $COMPOSE_CMD"
 echo "Starting containers with profile: $PROFILE"
 
 # -------------------------------
 # Stop any existing containers
 # -------------------------------
-docker-compose -f $COMPOSE_FILE down
+$COMPOSE_CMD -f $COMPOSE_FILE down
+
+# -------------------------------
+# Remove unused containers and images
+# -------------------------------
+echo "Removing unused containers and images..."
+podman container prune -f
+podman image prune -f
 
 # -------------------------------
 # Build and start containers
 # -------------------------------
-docker-compose -f $COMPOSE_FILE --profile $PROFILE up --build -d
+$COMPOSE_CMD -f $COMPOSE_FILE --profile $PROFILE up --build -d
 
 # -------------------------------
 # Tail logs
@@ -34,4 +48,4 @@ if [ "$PROFILE" == "debug" ]; then
 fi
 
 echo "Tailing logs for $SERVICE_NAME..."
-docker-compose -f $COMPOSE_FILE logs -f $SERVICE_NAME
+$COMPOSE_CMD -f $COMPOSE_FILE logs -f $SERVICE_NAME
